@@ -1,0 +1,220 @@
+﻿@model IDictionary<Pleberr.Models.User, List<Pleberr.Models.User>>
+
+@{
+    Layout = null;
+
+    string name = string.Empty;
+    List<Pleberr.Models.Request> requests = new List<Pleberr.Models.Request>();
+
+    using(System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["MainConnectionString"].ConnectionString))
+    {
+        conn.OpenAsync();
+
+        System.Data.SqlClient.SqlCommand cmd = conn.CreateCommand();
+        cmd.CommandText = string.Format("SELECT [FirstName], [LastName] FROM [User] WHERE [Id]='{0}'", Model.Keys.First<Pleberr.Models.User>().Id);
+
+        System.Data.SqlClient.SqlDataReader reader = cmd.ExecuteReaderAsync().Result;
+
+        if(reader.HasRows)
+        {
+            reader.ReadAsync();
+            name = String.Format("{0} {1}", reader.GetString(0), reader.GetString(1));
+        }
+
+        reader.Close();
+
+        cmd.CommandText = string.Format("SELECT * FROM [Request] WHERE ([From]='{0}' AND [Accepted]='True' AND [Read]='False') OR ([To]='{0}' AND [Pending]='True')", Model.Keys.First<Pleberr.Models.User>().Id);
+        reader = cmd.ExecuteReader();
+
+        if(reader.HasRows)
+        {
+            while(reader.ReadAsync().Result)
+            {
+                requests.Add(new Pleberr.Models.Request()
+                {
+                    Id = reader.GetInt32(0),
+                    From = reader.GetInt32(1),
+                    To = reader.GetInt32(2),
+                    Accepted = reader.GetBoolean(3),
+                    Read = reader.GetBoolean(4),
+                    Pending = reader.GetBoolean(5),
+                    FromName = reader.GetString(6),
+                    ToName = reader.GetString(7)
+                });
+            }
+        }
+
+        foreach(Pleberr.Models.Request request in requests)
+        {
+            reader.Close();
+            cmd.CommandText = string.Format("UPDATE [Request] SET [Read]='True' WHERE [From]='{0}' AND [Pending]='False'", Model.Keys.First<Pleberr.Models.User>().Id);
+
+            if(request.From == Model.Keys.First<Pleberr.Models.User>().Id)
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+    }
+}
+
+<nav>
+    <div class="left-nav">
+        <section>
+            School and Work<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@(Model.Keys.First<Pleberr.Models.User>().School)</a>
+            <input type="text" class="fill-in" value="@(Model.Keys.First<Pleberr.Models.User>().School)" maxlength="35" />
+            <br />
+            <a href="javascript:void(0)">@(Model.Keys.First<Pleberr.Models.User>().Work)</a>
+            <input type="text" class="fill-in" value="@(Model.Keys.First<Pleberr.Models.User>().Work)" maxlength="35" />
+        </div>
+        <section>
+            Locations<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@(Model.Keys.First<Pleberr.Models.User>().Location)</a>
+            <input type="text" class="fill-in" value="@(Model.Keys.First<Pleberr.Models.User>().Location)" maxlength="35" />
+        </div>
+        <section>
+            Relationships<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@(Model.Keys.First<Pleberr.Models.User>().Relationship)</a>
+            <input type="text" class="fill-in" value="@(Model.Keys.First<Pleberr.Models.User>().Relationship)" maxlength="35" />
+        </div>
+        <section>
+            Details<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@((Model.Keys.First<Pleberr.Models.User>().Birthdate.Year) > DateTime.Now.Year ? "Your date of birth" : (Model.Keys.First<Pleberr.Models.User>().Birthdate).ToString("dddd, dd MMMM yyyy"))</a>
+            <input type="date" class="fill-in" value="@((Model.Keys.First<Pleberr.Models.User>().Birthdate).Year > DateTime.Now.Year ? "2017-01-01" : (Model.Keys.First<Pleberr.Models.User>().Birthdate).ToString("yyyy-MM-dd"))" maxlength="35" />
+            <br />
+            <a href="javascript:void(0)">@(Model.Keys.First<Pleberr.Models.User>().Gender == "Your gender" ? "Your gender" : Model.Keys.First<Pleberr.Models.User>().Gender.ToString())</a>
+            <select class="fill-in">
+                <option value="Your gender">Your gender</option>
+                <option value="Male" @(Model.Keys.First<Pleberr.Models.User>().Gender == "Male" ? "selected" : string.Empty)>Male</option>
+                <option value="Female" @(Model.Keys.First<Pleberr.Models.User>().Gender == "Female" ? "selected" : string.Empty)>Female</option>
+            </select>
+            <br />
+            <a class="in-m" href="javascript:void(0)">@((Model.Keys.First<Pleberr.Models.User>().Height) == 0f ? "Your height" : (Model.Keys.First<Pleberr.Models.User>().Height).ToString() + " m")</a>
+            <input type="number" step="0.01" class="fill-in" value="@((Model.Keys.First<Pleberr.Models.User>().Height) == 0f ? "0.00" : (Model.Keys.First<Pleberr.Models.User>().Height).ToString())" maxlength="35" />
+            <br />
+            <a class="in-kg" href="javascript:void(0)">@((Model.Keys.First<Pleberr.Models.User>().Weight) == 0 ? "Your weight" : (Model.Keys.First<Pleberr.Models.User>().Weight).ToString() + " kg")</a>
+            <input type="number" class="fill-in" value="@((Model.Keys.First<Pleberr.Models.User>().Weight) == 0f ? "0" : (Model.Keys.First<Pleberr.Models.User>().Weight).ToString())" maxlength="35" />
+        </div>
+        <section>
+            Contact<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@(Model.Keys.First<Pleberr.Models.User>().Email2)</a>
+            <input type="text" class="fill-in" value="@(Model.Keys.First<Pleberr.Models.User>().Email2)" maxlength="35" />
+            <br />
+            <a href="javascript:void(0)">@(Model.Keys.First<Pleberr.Models.User>().Telephone)</a>
+            <input type="text" class="fill-in" value="@(Model.Keys.First<Pleberr.Models.User>().Telephone)" maxlength="35" />
+        </div>
+    </div>
+</nav>
+<main class="main-cont">
+    <h1>@name&#8217;s Friends</h1>
+    <div class="fix"></div>
+    @foreach(Pleberr.Models.Request request in requests)
+    {
+        if(request.From == Model.Keys.First<Pleberr.Models.User>().Id)
+        {
+            <div class="from-request">
+                <div style="background-image:url(../../@request.To/avatar.png);"></div>
+                @request.ToName has accepted your friend request.
+            </div>
+        }
+        else if(request.To == Model.Keys.First<Pleberr.Models.User>().Id && request.Pending)
+        {
+            <div data-from="@request.From" class="to-request">
+                <div style="background-image:url(../../@request.From/avatar.png);"></div>
+                @request.FromName sent you a friend request.
+                <button class="decline-request">Decline</button>
+                <button class="accept-request">Accept</button>
+            </div>
+        }
+    }
+    @foreach(Pleberr.Models.User friend in Model.Values.First<List<Pleberr.Models.User>>())
+    {
+        <section data-id="@friend.Id" style="cursor:pointer;background-image:url(../../@friend.Id/avatar.png);" onclick="document.location = '@friend.Id#/'">
+            <div>
+                <span title="@friend.FirstName @friend.LastName">@friend.FirstName @friend.LastName</span>
+                <img class="delete-friend" src="~/img/delete.png" alt="" />
+            </div>
+        </section>
+    }
+</main>
+<script>
+    $('.main-cont').find('img').click(function () {
+        $(this).parent().parent().fadeOut(200);
+    });
+    $('.left-nav').find('section').click(function () {
+        if ($(this).next().css('display') === 'none') {
+            $(this).find('img').css({ transform: 'rotate(180deg)' });
+        } else {
+            $(this).find('img').css({ transform: 'rotate(0deg)' });
+        }
+        $(this).next().slideToggle(200);
+    });
+    $('.left-nav').find('a').click(function () {
+        $(this).toggle();
+        $(this).next().css('display', 'block');
+        $(this).next().select();
+    });
+    $('.left-nav').find('input').keypress(function (e) {
+        if (e.which === 13 && $(this).val().trim() !== '') {
+            $(this).blur();
+            $(this).prev().html($(this).val());
+            if ($(this).prev().hasClass('in-m')) {
+                $('.in-m').html($(this).val() + ' m');
+            }
+            if ($(this).prev().hasClass('in-kg')) {
+                $('.in-kg').html($(this).val() + ' kg');
+            }
+            $(this).toggle();
+            $(this).prev().toggle();
+            var school = $('.fill-in').eq(0).val().replace("'", "''").replace('#', '&#35;').replace('+', '&#43;');
+            var work = $('.fill-in').eq(1).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+            var location = $('.fill-in').eq(2).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+            var relationship = $('.fill-in').eq(3).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+            var birthdate = $('.fill-in').eq(4).val();
+            var gender = $('.fill-in').eq(5).val();
+            var height = $('.fill-in').eq(6).val();
+            var weight = $('.fill-in').eq(7).val();
+            var email2 = $('.fill-in').eq(8).val();
+            var telephone = $('.fill-in').eq(9).val();
+            $.get('../../home/updateinfo?id=' + localStorage.getItem('id') + '&school=' + school + '&work=' + work + '&location=' + location + '&relationship=' + relationship + '&birthdate=' + birthdate + '&height=' + height + '&weight=' + weight + '&gender=' + gender + '&email2=' + email2 + '&telephone=' + telephone);
+        }
+    });
+    $('.left-nav').find('select').change(function (e) {
+        $(this).blur();
+        $(this).prev().html($(this).val());
+        if ($(this).prev().hasClass('in-m')) {
+            $('.in-m').html($(this).val() + ' m');
+        }
+        if ($(this).prev().hasClass('in-kg')) {
+            $('.in-kg').html($(this).val() + ' kg');
+        }
+        $(this).toggle();
+        $(this).prev().toggle();
+        var school = $('.fill-in').eq(0).val().replace("'", "''").replace('#', '&#35;').replace('+', '&#43;');
+        var work = $('.fill-in').eq(1).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+        var location = $('.fill-in').eq(2).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+        var relationship = $('.fill-in').eq(3).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+        var birthdate = $('.fill-in').eq(4).val();
+        var gender = $('.fill-in').eq(5).val();
+        var height = $('.fill-in').eq(6).val();
+        var weight = $('.fill-in').eq(7).val();
+        var email2 = $('.fill-in').eq(8).val();
+        var telephone = $('.fill-in').eq(9).val();
+        $.get('../../home/updateinfo?id=' + localStorage.getItem('id') + '&school=' + school + '&work=' + work + '&location=' + location + '&relationship=' + relationship + '&birthdate=' + birthdate + '&height=' + height + '&weight=' + weight + '&gender=' + gender + '&email2=' + email2 + '&telephone=' + telephone);
+    });
+</script>

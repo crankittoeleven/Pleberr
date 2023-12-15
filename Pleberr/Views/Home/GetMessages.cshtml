@@ -1,0 +1,16 @@
+﻿@model IDictionary<int, IEnumerable<Pleberr.Models.Message>>
+
+@{
+    Layout = null;
+}
+
+@foreach(Pleberr.Models.Message message in Model[Model.Keys.First<int>()])
+{
+    <div class="message">
+        <div class="message-avatar" style="background-image:url(../../@message.From/avatar.png)"></div>
+        <div>
+            @Html.Raw(message.Content)
+        </div>
+    </div>
+    <p class="fix"></p>
+}

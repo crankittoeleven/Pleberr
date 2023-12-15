@@ -1,0 +1,162 @@
+﻿@model IDictionary<Pleberr.Models.User, List<Pleberr.Models.Post>>
+
+@{
+    Layout = null;
+
+    List<Pleberr.Models.Comment> comments = new List<Pleberr.Models.Comment>();
+
+    using(System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["MainConnectionString"].ConnectionString))
+    {
+        conn.OpenAsync();
+
+        System.Data.SqlClient.SqlCommand cmd = conn.CreateCommand();
+
+        foreach(Pleberr.Models.Post post in Model[Model.Keys.First<Pleberr.Models.User>()].Distinct(new Pleberr.Utils.PostEqualityComparer()))
+        {
+            cmd.CommandText = string.Format("SELECT * FROM [Comment] WHERE [User]='{0}'", post.Owner);
+            System.Data.SqlClient.SqlDataReader reader = cmd.ExecuteReaderAsync().Result;
+
+            if(reader.HasRows)
+            {
+                while(reader.ReadAsync().Result)
+                {
+                    comments.Add(new Pleberr.Models.Comment()
+                    {
+                        Post = reader.GetInt32(1),
+                        User = reader.GetInt32(2),
+                        Content = reader.GetString(3),
+                        Author = reader.GetInt32(4),
+                        Name = reader.GetString(5),
+                        DateCreated = reader.GetDateTime(6)
+                    });
+                }
+            }
+
+            reader.Close();
+        }
+
+        comments.Sort(new Pleberr.Utils.CommentComparer());
+    }
+}
+
+<nav>
+    <div class="left-nav">
+        <section></section>
+    </div>
+</nav>
+<main>
+    <h1>@(Model.Keys.First<Pleberr.Models.User>().FirstName) @(Model.Keys.First<Pleberr.Models.User>().LastName)&#8217;s Feed</h1>
+    <div class="fix"></div>
+    @foreach(Pleberr.Models.Post post in Model[Model.Keys.First<Pleberr.Models.User>()])
+    {
+        if(post.Privacy == "public")
+        {
+            <article id="post@(post.Id)" data-owner="@post.Owner">
+                <div class="article-header">
+                    <div style="background-image:url(../../@post.Author/avatar.png)"></div>
+                    <span>
+                        @post.Name<br />
+                        <span>@post.DateCreated.ToString("dddd, dd MMMM yyyy HH:mm")</span>
+                    </span>
+                    @if(Model.Keys.First<Pleberr.Models.User>().Id == post.Owner)
+                    {
+                        <img class="delete-btn is-owner" src="~/img/post-delete.png" alt="" />
+                        <img class="settings-btn is-owner" src="~/img/post-settings.png" alt="" />
+                    }
+                </div>
+                <div class="fix" style="background:none;width:0;height:0;"></div>
+                <p>
+                    @Html.Raw(post.Content)
+                </p>
+                @foreach(Pleberr.Models.Comment comment in comments)
+                {
+                    if(comment.Post == post.Id)
+                    {
+                        <div class="comment">
+                            <div class="comment-avatar" style="background-image:url(../../@comment.Author/avatar.png)"></div>
+                            <div>
+                                <span>@comment.Name wrote:</span>
+                                @Html.Raw(comment.Content)
+                            </div>
+                        </div>
+                        <div class="fix"></div>
+                    }
+                }
+                <div class="post-options">
+                    <a class="likes" href="javascript:void(0)" title="@post.Likes Likes" data-likes="@post.Likes"><img src="~/img/like.png" alt="" />Like</a>@(Model.Keys.First<Pleberr.Models.User>().Id == post.Owner ? Html.Raw(string.Empty) : Html.Raw("<a class=\"share\" href=\"javascript:void(0)\"><img src=\"../../img/share.png\" />Share</a>"))
+                </div>
+                <input typeof="text" class="add-comment" placeholder="Comment here..." />
+                <div class="post-context">
+                    <ul>
+                        <li class="post-option" data-level="private">Private @(post.Privacy == "private" ? Html.Raw("<i class=\"fa fa-check\"></i>") : Html.Raw(string.Empty))</li>
+                        <li class="post-option" data-level="friends">Friends @(post.Privacy == "friends" ? Html.Raw("<i class=\"fa fa-check\"></i>") : Html.Raw(string.Empty))</li>
+                        <li class="post-option" data-level="public">Public @(post.Privacy == "public" ? Html.Raw("<i class=\"fa fa-check\"></i>") : Html.Raw(string.Empty))</li>
+                    </ul>
+                </div>
+                <input type="hidden" class="id" value="@post.Id" />
+            </article>
+            <script>
+                $('#post@(post.Id)').find('.share').click(function () {
+                    $.post("../../home/share/" + localStorage.getItem('id'), {
+                        postId: @post.Id
+                    })
+                    .done(function () {
+                        window.location = localStorage.getItem('id');
+                    });
+                });
+            </script>
+        }
+    }
+</main>
+<script>
+    $('.add-comment').keypress(function (e) {
+        var elem = $(this);
+        if (e.which === 13 && $(this).val().trim() !== '') {
+            $.post('../../home/postComment', {
+                post: $(this).parent().find('.id').val(),
+                user: elem.parent().attr('data-owner'),
+                content: $(this).val().replace("'", '&rsquo;').replace('#', '&#35;').replace('+', '&#43;'),
+                author: localStorage.getItem('id'),
+            })
+            .done(function () {
+                elem.parent().find('.post-options').before('<div class="comment"><div class="comment-avatar" style="background-image:url(../../' + localStorage.getItem('id') + '/avatar.png)"></div><div><span>@(Model.Keys.First<Pleberr.Models.User>().FirstName + " " + Model.Keys.First<Pleberr.Models.User>().LastName) wrote:</span> ' + elem.val().replace("'", '&rsquo;').replace('#', '&#35;').replace('+', '&#43;') + '</div></div><div class="fix"></div>');
+                elem.val('');
+            });
+        }
+    });
+    $('.settings-btn').click(function () {
+        $(this).parent().parent().find('.post-context').toggle();
+    });
+    $('.post-context').find('li').click(function () {
+        var elem = $(this);
+        $.post('../../home/setprivacy/' + elem.parent().parent().parent().find('.id').val(), {
+            level: elem.attr('data-level')
+        })
+        .done(function () {
+            $('.fa').remove();
+            elem.append(' <i class="fa fa-check"></i>');
+        });
+    });
+    $('.delete-btn').click(function () {
+        var elem = $(this);
+        $.get('../../home/deletepost/' + elem.parent().parent().find('.id').val())
+        .done(function () {
+            elem.parent().parent().fadeOut(200);
+        });
+    });
+    $('.img-post').click(function () {
+        $('.overlay').css('display', 'block');
+        $('.image').fadeIn(200);
+        $('.display-img').attr('src', $(this).attr('src'));
+    });
+    $('.likes').click(function () {
+        var elem = $(this);
+        $.post('../../like', {
+            id: localStorage.getItem('id'),
+            postId: $(this).parent().parent().find('.id').val()
+        })
+        .done(function () {
+            elem.attr('title', parseInt(elem.attr('data-likes')) + 1 + ' Likes');
+        });
+    });
+</script>

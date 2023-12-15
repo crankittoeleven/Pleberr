@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+    <html>
+        <head>
+            <meta charset="utf-8" />
+            <meta lang="en" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Pleberr - The Social Network for Students</title>
+            <link href="./css/home.less" rel="stylesheet/less" type="text/css" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/less.js/2.7.1/less.min.js"></script>
+        </head>
+        <body>
+            <header>
+                Pleberr<sup>&reg;</sup>
+                <button class="toggle-login">Sign in <img src="img/signin.png" alt="" /></button>
+            </header>
+            <main>
+                <div>
+                    <h2>Register</h2>
+                    <h3>Sign up to Pleberr as a student for FREE.</h3>
+                    <form>
+                        <input type="text" name="firstName" placeholder="First Name:" />
+                        <input type="text" name="lastName" placeholder="Last Name:" />
+                        <input type="text" name="email" placeholder="E-Mail Address:" />
+                        <input type="text" name="emailRepeat" placeholder="Repeat E-Mail:" />
+                        <input type="password" name="password" placeholder="Password:" />
+                        <input type="password" name="passwordRepeat" placeholder="Repeat Password:" />
+                        <section class="fix"></section>
+                        <button>Register</button>
+                    </form>
+                    <ul>
+                        <li>Your E-Mail Addresses do not match.</li>
+                        <li>Your Passwords do not match.</li>
+                    </ul>
+                </div>
+            </main>
+            <div class="fix"></div>
+            <footer>
+                COPYRIGHT &copy; 2016 PLEBERR.COM
+            </footer>
+            <section class="login">
+                <form>
+                    <input type="text" name="email" placeholder="E-Mail Address:" />
+                    <input type="password" name="password" placeholder="Password:" />
+                    <input type="image" src="img/login-btn.png" />
+                    <img class="toggle-login" src="img/close-white.png" alt="" />
+                </form>
+            </section>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+            <script>
+                'use strict';
+                $('main').find('div').css('height', $(window).height() - 250);
+                $(window).resize(function () {
+                    $('main').find('div').css('height', $(window).height() - 250);
+                });
+                $('.toggle-login').click(function () {
+                    $('.login').fadeToggle(200);
+                });
+            </script>
+        </body>
+    </html>

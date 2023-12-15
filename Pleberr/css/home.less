@@ -1,0 +1,283 @@
+﻿@grey10:rgba(0, 0, 0, .1);
+@grey30:rgba(0, 0, 0, .3);
+@grey70:rgba(0, 0, 0, .7);
+@blue:#4157cc;
+@green:#66993d;
+@white18:rgba(255, 255, 255, .18);
+
+.trans(@prop, @t){
+    transition:@prop ease @t;
+}
+.bord(@size, @color){
+    border:@size solid @color;
+}
+
+@font-face{
+    font-family:Helvetica;
+    src:url(../fonts/Helvetica.ttf) format('truetype'), url(../fonts/Helvetica.woff) format('woff');
+}
+@font-face{
+    font-family:HelveticaBold;
+    src:url(../fonts/Helvetica-Bold.ttf) format('truetype'), url(../fonts/Helvetica-Bold.woff) format('woff');
+}
+@font-face{
+    font-family:Fira;
+    src:url(../fonts/FiraSans-Ultra.ttf) format('truetype'), url(../fonts/FiraSans-Ultra.woff) format('woff');
+}
+
+*{
+    padding:0;
+    margin:0;
+}
+body{
+    font-family:Helvetica;
+    background-image:url(../img/home-bg.png);
+    background-size:cover;
+    background-repeat:no-repeat;
+    overflow:hidden;
+
+    h2, h3{
+        font-family:HelveticaBold;
+        font-weight:normal;
+    }
+    header{
+        width:1200px;
+        height:90px;
+        margin:0 auto;
+        font-size:24px;
+        font-family:Fira;
+        line-height:76px;
+
+        sup{
+            font-size:14px;
+        }
+        button{
+            width:90px;
+            float:right;
+            padding:0 0 0 15px;
+            margin:10px 0;
+            font-size:10px;
+            font-family:HelveticaBold;
+            line-height:35px;
+            color:#fff;
+            text-align:left;
+            border-radius:10px;
+            border:none;
+            background:@blue;
+            cursor:pointer;
+            outline:none;
+            .trans(border-color, .2s);
+
+            &:hover{
+                border-color:@green;
+            }
+            img{
+                float:right;
+                margin:0 7px 0 0;
+            }
+        }
+    }
+    main{
+        display:block;
+        width:1200px;
+        margin:0 auto;
+
+        div{
+            width:376px;
+            height:440px!important;
+            padding:40px;
+            margin:0 auto;
+            font-size:14px;
+            font-family:HelveticaBold;
+            line-height:14px;
+            color:#000;
+            border:1px solid black;
+            border-radius:20px;
+            background:#fff;
+
+            h3{
+                font-size:13px;
+                line-height:42px;
+            }
+            form{
+                input{
+                    display:block;
+                    width:350px;
+                    height:40px;
+                    float:left;
+                    padding:0 10px;
+                    margin:0 0 20px 0;
+                    font-size:12px;
+                    font-family:Helvetica;
+                    color:#000;
+                    border:1px solid black;
+                    border-radius:10px;
+                    background:@white18;
+                    outline:none;
+
+                    &:first-child{
+                        width:160px;
+                        margin:0 10px 0 0;
+                    }
+                    &:last-of-type{
+                        width:160px;
+                        margin:0 0 0 10px;
+                    }
+                    &:nth-child(2){
+                        width:160px;
+                    }
+                    &:nth-child(5){
+                        width:160px;
+                    }
+                }
+                button{
+                    display:block;
+                    width:370px;
+                    margin:20px 0 0 0;
+                    font-size:12px;
+                    font-family:HelveticaBold;
+                    line-height:40px;
+                    color:#fff;
+                    text-align:center;
+                    border:none;
+                    border-radius:10px;
+                    background:@green;
+                    outline:none;
+                    .trans(background, .2s);
+
+                    &:hover{
+                        background:@blue;
+                    }
+                }
+            }
+            ul{
+                list-style:none;
+                margin:10px 0 0 0;
+
+                li{
+                    font-size:11px;
+                    font-family:Helvetica;
+                    line-height:18px;
+                    color:indianred;
+                }
+            }
+        }
+    }
+    footer{
+        width:1200px;
+        margin:0 auto;
+        font-size:8px;
+        font-family:Helvetica;
+        line-height:80px;
+    }
+    .login{
+        display:none;
+        width:330px;
+        height:200px;
+        position:absolute;
+        top:0;
+        left:0;
+        right:0;
+        bottom:0;
+        padding:20px;
+        margin:auto;
+        border:1px solid black;
+        border-radius:20px;
+        background:#fff;
+        z-index:10;
+
+        form{
+            width:100%;
+            position:relative;
+
+            input[type='text'], input[type='password']{
+                display:block;
+                width:310px;
+                height:40px;
+                padding:0 10px;
+                margin:10px 30px 15px 0;
+                font-size:14px;
+                font-family:Helvetica;
+                line-height:38px;
+                border:1px solid black;
+                border-radius:10px;
+                background:transparent;
+                outline:none;
+            }
+            input[type='image']{
+                width:36px;
+                margin:0;
+                border:none;
+            }
+            img{
+                width:20px;
+                position:absolute;
+                top:-40px;
+                left:310px;
+                margin:5px 0 0 0;
+                opacity:.4;
+                cursor:pointer;
+                filter:invert(1);
+
+                &:hover{
+                    opacity:.7;
+                }
+            }
+        }
+    }
+    .fix{
+        clear:both;
+    }
+}
+
+@media (max-width: 1360px){
+    header, main, footer, .login>form{
+        width:960px!important;
+    }
+}
+@media (max-width: 960px){
+    header, main, footer{
+        width:90%!important;
+        padding:0 5%!important;
+    }
+    footer{
+        padding:70px 0 0 0!important;
+        line-height:10px!important;
+    }
+    main div{
+        width:90%!important;
+        float:none!important;
+        padding:5% 5% 5% 5%!important;
+    }
+    main div input{
+        width:96%!important;
+        padding:0 2%!important;
+        margin:0 0 5px 0!important;
+    }
+    main div button{
+        width:100%!important;
+    }
+    .login form{
+        width:90%!important;
+        padding-left:0!important;
+    }
+    .login input:not([type='image']){
+        width:110px!important;
+        margin:0 5% 0 0!important;
+    }
+}
+::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+    color: #000;
+}
+
+::-moz-placeholder { /* Firefox 19+ */
+    color: #000;
+}
+
+:-ms-input-placeholder { /* IE 10+ */
+    color: #000;
+}
+
+:-moz-placeholder { /* Firefox 18- */
+    color: #000;
+}

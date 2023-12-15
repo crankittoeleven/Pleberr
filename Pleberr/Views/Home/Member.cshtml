@@ -1,0 +1,235 @@
+﻿@model IDictionary<string, Pleberr.Models.User>
+
+@{
+    Layout = null;
+
+    int friendsNotifications = 0;
+    int messageNotifications = 0;
+
+    using(System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["MainConnectionString"].ConnectionString))
+    {
+        conn.OpenAsync();
+
+        System.Data.SqlClient.SqlCommand cmd = conn.CreateCommand();
+        cmd.CommandText = string.Format("SELECT COUNT(*) FROM [Request] WHERE ([From]='{0}' AND [Accepted]='True' AND [Read]='False') OR ([To]='{0}' AND [Pending]='True')", Model[Model.Keys.First<string>()].Id);
+        friendsNotifications = (int)cmd.ExecuteScalarAsync().Result;
+
+        cmd.CommandText = string.Format("SELECT COUNT(*) FROM [Message] WHERE [To]={0} AND [Read]='False'", Model[Model.Keys.First<string>()].Id);
+        messageNotifications = (int)cmd.ExecuteScalarAsync().Result;
+    }
+}
+
+<!DOCTYPE html>
+    <html ng-app="pleberr">
+        <head>
+            <meta charset="utf-8" />
+            <meta lang="en" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <link rel="shortcut icon" href="/favicon.ico" />
+            <link rel="icon" href="/favicon.ico" />
+            <title>@Model[Model.Keys.First<string>()].FirstName @Model[Model.Keys.First<string>()].LastName - Klozerr Member Page</title>
+            <link href="~/css/main.less" rel="stylesheet/less" type="text/css" />
+            <link href="~/css/queries.less" rel="stylesheet/less" type="text/css" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/less.js/2.7.1/less.min.js"></script>
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+            <link href="~/js/jquery-ui.min.css" rel="stylesheet" type="text/css" />
+            <link href="~/js/jquery-ui.theme.css" rel="stylesheet" type="text/css" />
+        </head> 
+        <body>
+            <header class="top-header">
+                <a ng-href="https://klozerr.com" style="cursor:pointer!important"><span class="logo">Klozerr<sup>&reg;</sup></span></a>
+                <input type="search" class="search" placeholder="Find fellow members..." />
+                <nav>
+                    <ul>
+                        <li>
+                            <a class="is-user" href="javascript:window.location = localStorage.getItem('id')"><img src="~/img/home.png" alt="" />Home</a>
+                        </li>
+                        <li>
+                            <a class="is-owner" ng-href="@Model[Model.Keys.First<string>()].Id#!/feed"><img src="~/img/feed.png" alt="" />Feed</a>
+                        </li>
+                    </ul>
+                </nav>
+                <ul class="right-nav">
+                    <li>
+                        <a class="is-owner" ng-href="@Model[Model.Keys.First<string>()].Id#!/friends"><img src="~/img/friends.png" title="Friends List" /></a>
+                        <a class="is-owner" ng-href="@Model[Model.Keys.First<string>()].Id#!/pictures"><img src="~/img/pictures.png" title="Pictures" /></a>
+                        <a class="is-owner" ng-href="@Model[Model.Keys.First<string>()].Id#!/messages"><img src="~/img/messages.png" title="Messages" /></a>
+                        <a class="is-owner" ng-href="@Model[Model.Keys.First<string>()].Id#!/settings"><img src="~/img/settings.png" title="Settings" /></a>
+                        <a class="logout is-user" href="#"><img src="~/img/logout.png" title="Logout" /></a>
+                    </li>
+                </ul>
+                <div class="fix"></div>
+                @(friendsNotifications > 0 ? Html.Raw("<div class=\"friends-notifications\">" + friendsNotifications + "</div>") : Html.Raw(string.Empty))
+                @(messageNotifications > 0 ? Html.Raw("<div class=\"message-notifications\">" + messageNotifications + "</div>") : Html.Raw(string.Empty))
+                <section class="search-results">
+                    No results
+                </section>
+            </header>
+            <main>
+                <header class="main-header" style="background-image:url(../../@Model[Model.Keys.First<string>()].Id/member-header.jpg?rand=@(new Random().Next()));">
+                    <div class="avatar-container">
+                        <div class="avatar" style="background-image:url(../../@Model[Model.Keys.First<string>()].Id/avatar.png?rand=@(new Random().Next()));">
+                            <div class="image-hover">
+                                Update<img src="~/img/add-picture.png" alt="" />
+                                <form method="post" action="~/home/uploadavatar/@Model[Model.Keys.First<string>()].Id" target="fileFrame" id="file-form" enctype="multipart/form-data">
+                                    <input type="file" id="file-select" name="photo" accept=".png, .PNG, .jpg, .JPG, .gif, .GIF" />
+                                </form><iframe id="fileFrame" name="fileFrame" src="" style="display:none;"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="image-hover-lg">
+                        Update<img src="~/img/add-picture.png" alt="" />
+                        <form method="post" action="~/home/uploadbg/@Model[Model.Keys.First<string>()].Id" target="fileFrameBg" id="file-formBg" enctype="multipart/form-data">
+                            <input type="file" id="file-selectBg" name="photo" accept=".png, .PNG, .jpg, .JPG, .gif, .GIF" />
+                        </form><iframe id="fileFrameBg" name="fileFrameBg" src="" style="display:none;"></iframe>
+                    </div>
+                </header>
+                <main ng-view>
+                    
+                </main>
+            </main>
+            <div class="fix"></div>
+            <footer>
+                COPYRIGHT @DateTime.Now.Year KLOZERR.COM
+            </footer>
+            <section class="overlay">
+                <section class="post">
+                    <h3>New Post</h3>
+                    <textarea placeholder="Enter text here..."></textarea>
+                    <button>Post<img src="~/img/post.png" alt="" /></button>
+                    <img class="close" src="~/img/close.png" alt="" />
+                </section>
+                <section class="video">
+                    <h3>New Video</h3>
+                    <input type="text" placeholder="Enter YouTube Url here..." />
+                    <button>Post<img src="~/img/post.png" alt="" /></button>
+                    <img class="close" src="~/img/close.png" alt="" />
+                </section>
+                <section class="picture">
+                    <h3>New Picture</h3>
+                    <form method="post" action="~/home/uploadimg/@Model[Model.Keys.First<string>()].Id" target="fileFrameImg" id="file-formImg" enctype="multipart/form-data">
+                        <input type="file" id="file-selectImg" name="photo" accept=".png, .PNG, .jpg, .JPG, .gif, .GIF" placeholder="Enter file here..." />
+                    </form><iframe id="fileFrameImg" name="fileFrameImg" src="" style="display:none;"></iframe>
+                    <img class="close" src="~/img/close.png" alt="" />
+                </section>
+                <section class="image">
+                    <img class="display-img" alt="" style="width:600px" />
+                    <div class="fix"></div>
+                    <img class="close" src="~/img/close-white.png" />
+                </section>
+            </section>
+            <input type="hidden" class="token" value="@(Model.Keys.First<string>())" />
+            <input type="hidden" class="id" value="@Model[Model.Keys.First<string>()].Id" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+            <script src="~/js/jquery-ui.min.js"></script>
+            <script src="https://code.angularjs.org/1.8.2/angular.min.js"></script>
+            <script src="https://code.angularjs.org/1.8.2/angular-route.min.js"></script>
+            <script src="https://code.angularjs.org/1.8.2/angular-resource.min.js"></script>
+            <script src="~/js/app/app.js"></script>
+            <script src="~/js/app/controllers/mainCtrl.js"></script>
+            <script src="~/js/app/controllers/feedCtrl.js"></script>
+            <script src="~/js/app/controllers/friendsCtrl.js"></script>
+            <script src="~/js/app/controllers/picturesCtrl.js"></script>
+            <script src="~/js/app/controllers/settingsCtrl.js"></script>
+            <script src="~/js/app/controllers/messagesCtrl.js"></script>
+            <script>
+                $('.close').click(function () {
+                    $(this).parent().toggle();
+                    $(this).parent().parent().toggle();
+                });
+                $(document).tooltip();
+                if ('@(Model.Keys.First<string>())' === '') {
+                    localStorage.setItem('token', '@(Model.Keys.First<string>())');
+                    localStorage.setItem('id', '0');
+                    localStorage.setItem('pageId', '@Model[Model.Keys.First<string>()].Id');
+                    localStorage.setItem('name', '@Model[Model.Keys.First<string>()].FirstName' + ' ' + '@Model[Model.Keys.First<string>()].LastName')
+                    $('.is-user').css('display', 'none');
+                }
+                if (localStorage.getItem('token') === null) {
+                    localStorage.setItem('id', '@Model[Model.Keys.First<string>()].Id');
+                    localStorage.setItem('pageId', '@Model[Model.Keys.First<string>()].Id');
+                    localStorage.setItem('name', '@Model[Model.Keys.First<string>()].FirstName' + ' ' + '@Model[Model.Keys.First<string>()].LastName')
+                } else {
+                    localStorage.setItem('pageId', '@Model[Model.Keys.First<string>()].Id');
+                }
+                localStorage.setItem('token', '@(Model.Keys.First<string>())');
+                window.history.replaceState({}, '', '@Model[Model.Keys.First<string>()].Id#/');
+                if (localStorage.getItem('pageId') !== localStorage.getItem('id')) {
+                    $('.is-owner').css('display', 'none');
+                } else {
+                    $('.avatar').mouseenter(function () {
+                        $(this).find('.image-hover').animate({ bottom: '+=20' }, 200);
+                    });
+                    $('.avatar').mouseleave(function () {
+                        $(this).find('.image-hover').animate({ bottom: '-=20' }, 200);
+                    });
+                    $('.main-header').mouseenter(function () {
+                        $(this).find('.image-hover-lg').fadeIn(200);
+                    });
+                    $('.main-header').mouseleave(function () {
+                        $(this).find('.image-hover-lg').fadeOut(200);
+                    });
+                }
+                $('#file-select').change(function () {
+                    $('#file-form').submit();
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 3000);
+                });
+                $('#file-selectBg').change(function () {
+                    $('#file-formBg').submit();
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 3000);
+                });
+                $('.logout').click(function () {
+                    $.post('../../home/setoffline/@Model[Model.Keys.First<string>()].Id', function () {
+                        $.get('../../home/logout')
+                    })
+                    .done(function () {
+                        localStorage.clear();
+                        window.location = '../../../';
+                    });
+                });
+                $('.search').keypress(function () {
+                    var elem = $(this);
+                    elem.css('background-image', 'none');
+                    var result;
+                    if (elem.val().length > 1) {
+                        $('.search-results').css('display', 'block');
+                        $.getJSON('../../home/search?term=' + elem.val())
+                        .done(function (data) {
+                            if (data.Results === undefined) {
+                                $('.search-results').html('');
+                                $.each(data, function (i, item) {
+                                    $('.search-results').append('<a href="/home/member/' + item.Id + '"><div><div style="background-image:url(../../' + item.Id + '/avatar.png)"></div>' + item.FirstName + ' ' + item.LastName + '</div></a>');
+                                });
+                            } else {
+                                $('.search-results').html('No results');
+                            }
+                        });
+                    } else {
+                        $('.search-results').css('display', 'none');
+                    }
+                });
+                $('.search').blur(function () {
+                    var elem = $(this);
+                    setTimeout(function () {
+                        elem.css('background-image', 'url(../../img/search.png)');
+                        $('.search-results').css('display', 'none');
+                        $('.search-results').html('No results');
+                    }, 500);
+                });
+                if (!!window.chrome && !!window.chrome.webstore) {
+                    $(".search-results").css('left', '120px');
+                }
+                if (!!document.documentMode) {
+                    $(".search-results").css('left', '118px');
+                }
+                $.post('../../home/setonline/' + localStorage.getItem('id'));
+                $(window).on('beforeunload', function () {
+                    $.post('../../home/setoffline/@Model[Model.Keys.First<string>()].Id');
+                });
+            </script>
+        </body>
+    </html>

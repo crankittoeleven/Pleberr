@@ -1,0 +1,7 @@
+﻿@model int
+@{
+    Layout = null;
+
+    var file = Request.Files[0];
+    file.SaveAs(Server.MapPath("~/" + @Model + "/avatar.png"));
+}

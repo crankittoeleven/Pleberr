@@ -1,0 +1,7 @@
+﻿
+@{
+    Layout = null;
+
+    var file = Request.Files[0];
+    file.SaveAs(Server.MapPath("~/" + @Model + "/member-header.jpg"));
+}

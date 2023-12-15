@@ -1,0 +1,206 @@
+﻿@model Pleberr.Models.User
+@{
+    Layout = null;
+
+    Pleberr.Models.Setting settings = new Pleberr.Models.Setting();
+
+    using(System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["MainConnectionString"].ConnectionString))
+    {
+        conn.OpenAsync();
+
+        System.Data.SqlClient.SqlCommand cmd = conn.CreateCommand();
+        cmd.CommandText = string.Format("SELECT [PostsPrivacy], [InfoPrivacy], [FriendsPrivacy], [PicturesPrivacy] FROM [Setting] WHERE [User]='{0}'", Model.Id);
+
+        System.Data.SqlClient.SqlDataReader reader = cmd.ExecuteReaderAsync().Result;
+
+        if(reader.HasRows)
+        {
+            reader.ReadAsync();
+
+            settings.PostsPrivacy = reader.GetBoolean(0);
+            settings.InfoPrivacy = reader.GetBoolean(1);
+            settings.FriendsPrivacy = reader.GetBoolean(2);
+            settings.PicturesPrivacy = reader.GetBoolean(3);
+        }
+    }
+}
+
+<nav>
+    <div class="left-nav">
+        <section>
+            School and Work<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@Model.School</a>
+            <input type="text" class="fill-in" value="@Model.School" maxlength="35" />
+            <br />
+            <a href="javascript:void(0)">@Model.Work</a>
+            <input type="text" class="fill-in" value="@Model.Work" maxlength="35" />
+        </div>
+        <section>
+            Locations<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@Model.Location</a>
+            <input type="text" class="fill-in" value="@Model.Location" maxlength="35" />
+        </div>
+        <section>
+            Relationships<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@Model.Relationship</a>
+            <input type="text" class="fill-in" value="@Model.Relationship" maxlength="35" />
+        </div>
+        <section>
+            Details<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@(Model.Birthdate.Year > DateTime.Now.Year ? "Your date of birth" : Model.Birthdate.ToString("dddd, dd MMMM yyyy"))</a>
+            <input type="date" class="fill-in" value="@(Model.Birthdate.Year > DateTime.Now.Year ? "2017-01-01" : Model.Birthdate.ToString("yyyy-MM-dd"))" maxlength="35" />
+            <br />
+            <a href="javascript:void(0)">@(Model.Gender == "Your gender" ? "Your gender" : Model.Gender.ToString())</a>
+            <select class="fill-in">
+                <option value="Your gender">Your gender</option>
+                <option value="Male" @(Model.Gender == "Male" ? "selected" : string.Empty)>Male</option>
+                <option value="Female" @(Model.Gender == "Female" ? "selected" : string.Empty)>Female</option>
+            </select>
+            <br />
+            <a class="in-m" href="javascript:void(0)">@(Model.Height == 0f ? "Your height" : Model.Height.ToString() + " m")</a>
+            <input type="number" step="0.01" class="fill-in" value="@(Model.Height == 0f ? "0.00" : Model.Height.ToString())" maxlength="35" />
+            <br />
+            <a class="in-kg" href="javascript:void(0)">@(Model.Weight == 0 ? "Your weight" : Model.Weight.ToString() + " kg")</a>
+            <input type="number" class="fill-in" value="@(Model.Weight == 0f ? "0" : Model.Weight.ToString())" maxlength="35" />
+        </div>
+        <section>
+            Contact<img src="~/img/arrow.png" alt="" />
+            <br />
+        </section>
+        <div>
+            <a href="javascript:void(0)">@Model.Email2</a>
+            <input type="text" class="fill-in" value="@Model.Email2" maxlength="35" />
+            <br />
+            <a href="javascript:void(0)">@Model.Telephone</a>
+            <input type="text" class="fill-in" value="@Model.Telephone" maxlength="35" />
+        </div>
+    </div>
+</nav>
+<main class="main-cont">
+    <h1>@Model.FirstName @Model.LastName&#8217;s Settings</h1>
+    <div class="fix"></div>
+    <form class="settings-frm">
+        <table>
+            <tr>
+                <td>First Name</td>
+                <td><input type="text" class="first-txt" value="@Model.FirstName" required /></td>
+            </tr>
+            <tr>
+                <td>Last Name</td>
+                <td><input type="text" class="last-txt" value="@Model.LastName" required /></td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td><input type="text" class="email-txt" value="@Model.Email" /></td>
+            </tr>
+            <tr>
+                <td>Retype Email</td>
+                <td><input type="text" class="email-r-txt" value="" /></td>
+            </tr>
+            <tr>
+                <td>New password</td>
+                <td><input type="password" class="password-txt" value="" /></td>
+            </tr>
+            <tr>
+                <td>Retype password</td>
+                <td><input type="password" class="password-r-txt" value="" /></td>
+            </tr>
+            <tr>
+                <td>Make my posts private</td>
+                <td><input class="posts-privacy" type="checkbox" @(settings.PostsPrivacy ? Html.Raw("checked") : Html.Raw(string.Empty)) /></td>
+            </tr>
+            <tr>
+                <td>Make my information private</td>
+                <td><input class="info-privacy" type="checkbox" @(settings.InfoPrivacy ? Html.Raw("checked") : Html.Raw(string.Empty)) /></td>
+            </tr>
+            <tr>
+                <td>Make my friends private</td>
+                <td><input class="friends-privacy" type="checkbox" @(settings.FriendsPrivacy ? Html.Raw("checked") : Html.Raw(string.Empty)) /></td>
+            </tr>
+            <tr>
+                <td>Make my pictures private</td>
+                <td><input class="pictures-privacy" type="checkbox" @(settings.PicturesPrivacy ? Html.Raw("checked") : Html.Raw(string.Empty)) /></td>
+            </tr>
+            <tr>
+                <td class="settings-result"></td>
+                <td><button>Save</button></td>
+            </tr>
+        </table>
+    </form>
+</main>
+<script>
+    $('.left-nav').find('section').click(function () {
+        if ($(this).next().css('display') === 'none') {
+            $(this).find('img').css({ transform: 'rotate(180deg)' });
+        } else {
+            $(this).find('img').css({ transform: 'rotate(0deg)' });
+        }
+        $(this).next().slideToggle(200);
+    });
+    $('.left-nav').find('a').click(function () {
+        $(this).toggle();
+        $(this).next().css('display', 'block');
+        $(this).next().select();
+    });
+    $('.left-nav').find('input').keypress(function (e) {
+        if (e.which === 13 && $(this).val().trim() !== '') {
+            $(this).blur();
+            $(this).prev().html($(this).val());
+            if ($(this).prev().hasClass('in-m')) {
+                $('.in-m').html($(this).val() + ' m');
+            }
+            if ($(this).prev().hasClass('in-kg')) {
+                $('.in-kg').html($(this).val() + ' kg');
+            }
+            $(this).toggle();
+            $(this).prev().toggle();
+            var school = $('.fill-in').eq(0).val().replace("'", "''").replace('#', '&#35;').replace('+', '&#43;');
+            var work = $('.fill-in').eq(1).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+            var location = $('.fill-in').eq(2).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+            var relationship = $('.fill-in').eq(3).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+            var birthdate = $('.fill-in').eq(4).val();
+            var gender = $('.fill-in').eq(5).val();
+            var height = $('.fill-in').eq(6).val();
+            var weight = $('.fill-in').eq(7).val();
+            var email2 = $('.fill-in').eq(8).val();
+            var telephone = $('.fill-in').eq(9).val();
+            $.get('../../home/updateinfo?id=' + localStorage.getItem('id') + '&school=' + school + '&work=' + work + '&location=' + location + '&relationship=' + relationship + '&birthdate=' + birthdate + '&height=' + height + '&weight=' + weight + '&gender=' + gender + '&email2=' + email2 + '&telephone=' + telephone);
+        }
+    });
+    $('.left-nav').find('select').change(function (e) {
+        $(this).blur();
+        $(this).prev().html($(this).val());
+        if ($(this).prev().hasClass('in-m')) {
+            $('.in-m').html($(this).val() + ' m');
+        }
+        if ($(this).prev().hasClass('in-kg')) {
+            $('.in-kg').html($(this).val() + ' kg');
+        }
+        $(this).toggle();
+        $(this).prev().toggle();
+        var school = $('.fill-in').eq(0).val().replace("'", "''").replace('#', '&#35;').replace('+', '&#43;');
+        var work = $('.fill-in').eq(1).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+        var location = $('.fill-in').eq(2).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+        var relationship = $('.fill-in').eq(3).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+        var birthdate = $('.fill-in').eq(4).val();
+        var gender = $('.fill-in').eq(5).val();
+        var height = $('.fill-in').eq(6).val();
+        var weight = $('.fill-in').eq(7).val();
+        var email2 = $('.fill-in').eq(8).val();
+        var telephone = $('.fill-in').eq(9).val();
+        $.get('../../home/updateinfo?id=' + localStorage.getItem('id') + '&school=' + school + '&work=' + work + '&location=' + location + '&relationship=' + relationship + '&birthdate=' + birthdate + '&height=' + height + '&weight=' + weight + '&gender=' + gender + '&email2=' + email2 + '&telephone=' + telephone);
+    });
+    $('.main-header').css('display', 'none');
+</script>

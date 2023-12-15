@@ -1,0 +1,409 @@
+﻿@model Pleberr.Models.User
+
+@{
+    Layout = null;
+
+    bool isOwner = Request.Cookies["id"].Value == Model.Id.ToString();
+    bool isFriend = Model.Friends.IndexOf(Request.Cookies["id"].Value) != -1;
+
+    List<Pleberr.Models.Post> posts = new List<Pleberr.Models.Post>();
+    List<Pleberr.Models.Comment> comments = new List<Pleberr.Models.Comment>();
+    DirectoryInfo dInfo = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + Model.Id);
+    List<Pleberr.Models.User> friends = new List<Pleberr.Models.User>();
+    Pleberr.Models.Setting setting = new Pleberr.Models.Setting() { PostsPrivacy = false, InfoPrivacy = false, FriendsPrivacy = false, PicturesPrivacy = false };
+
+    using(System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["MainConnectionString"].ConnectionString))
+    {
+        conn.OpenAsync();
+
+        System.Data.SqlClient.SqlCommand cmd = conn.CreateCommand();
+        cmd.CommandText = string.Format("SELECT * FROM [Post] WHERE [Owner]='{0}';", Model.Id);
+
+        System.Data.SqlClient.SqlDataReader reader = cmd.ExecuteReaderAsync().Result;
+
+        if(reader.HasRows)
+        {
+            while(reader.ReadAsync().Result)
+            {
+                posts.Add(new Pleberr.Models.Post() {
+                    Id = reader.GetInt32(0),
+                    Owner = reader.GetInt32(1),
+                    Author = reader.GetInt32(2),
+                    DateCreated = reader.GetDateTime(3),
+                    Content = reader.GetString(4),
+                    Likes = reader.GetInt32(5),
+                    Type = reader.GetString(6),
+                    Privacy = reader.GetString(8),
+                    Name = reader.GetString(9)
+                });
+            }
+        }
+
+        posts.Sort(new Pleberr.Utils.PostComparer());
+        posts.Reverse();
+
+        reader.Close();
+
+        cmd.CommandText = string.Format("SELECT * FROM [Comment] WHERE [User]='{0}'", Model.Id);
+        reader = cmd.ExecuteReaderAsync().Result;
+
+        if(reader.HasRows)
+        {
+            while(reader.ReadAsync().Result)
+            {
+                comments.Add(new Pleberr.Models.Comment() {
+                    Post = reader.GetInt32(1),
+                    User = reader.GetInt32(2),
+                    Content = reader.GetString(3),
+                    Author = reader.GetInt32(4),
+                    Name = reader.GetString(5),
+                    DateCreated = reader.GetDateTime(6)
+                });
+            }
+        }
+
+        comments.Sort(new Pleberr.Utils.CommentComparer());
+
+        var temp = Model.Friends.Split(' ').Skip<string>(1);
+
+        foreach(string item in temp)
+        {
+            reader.Close();
+            cmd.CommandText = string.Format("SELECT [Id], [FirstName], [LastName] FROM [User] WHERE [Id]='{0}'", item);
+            reader = cmd.ExecuteReaderAsync().Result;
+
+            if(reader.HasRows)
+            {
+                reader.ReadAsync();
+
+                friends.Add(new Pleberr.Models.User() {
+                    Id = reader.GetInt32(0),
+                    FirstName = reader.GetString(1),
+                    LastName = reader.GetString(2)
+                });
+            }
+        }
+
+        reader.Close();
+
+        cmd.CommandText = string.Format("SELECT * FROM [Setting] WHERE [User]='{0}'", Model.Id);
+        reader = cmd.ExecuteReaderAsync().Result;
+
+        if(reader.HasRows)
+        {
+            reader.ReadAsync();
+
+            setting.PostsPrivacy = reader.GetBoolean(2);
+            setting.InfoPrivacy = reader.GetBoolean(3);
+            setting.FriendsPrivacy = reader.GetBoolean(4);
+            setting.PicturesPrivacy = reader.GetBoolean(5);
+        }
+    }
+}
+
+<nav>
+    <div class="left-nav">
+        @if(isOwner || !setting.InfoPrivacy)
+        {
+            <section>
+                School and Work<img src="~/img/arrow.png" alt="" />
+                <br />
+            </section>
+            <div>
+                <a href="javascript:void(0)">@Model.School</a>
+                <input type="text" class="fill-in" value="@Model.School" maxlength="35" />
+                <br />
+                <a href="javascript:void(0)">@Model.Work</a>
+                <input type="text" class="fill-in" value="@Model.Work" maxlength="35" />
+            </div>
+            <section>
+                Locations<img src="~/img/arrow.png" alt="" />
+                <br />
+            </section>
+            <div>
+                <a href="javascript:void(0)">@Model.Location</a>
+                <input type="text" class="fill-in" value="@Model.Location" maxlength="35" />
+            </div>
+            <section>
+                Relationships<img src="~/img/arrow.png" alt="" />
+                <br />
+            </section>
+            <div>
+                <a href="javascript:void(0)">@Model.Relationship</a>
+                <input type="text" class="fill-in" value="@Model.Relationship" maxlength="35" />
+            </div>
+            <section>
+                Details<img src="~/img/arrow.png" alt="" />
+                <br />
+            </section>
+            <div>
+                <a href="javascript:void(0)">@(Model.Birthdate.Year > DateTime.Now.Year ? "Your date of birth" : Model.Birthdate.ToString("dddd, dd MMMM yyyy"))</a>
+                <input type="date" class="fill-in" value="@(Model.Birthdate.Year > DateTime.Now.Year ? "2017-01-01" : Model.Birthdate.ToString("yyyy-MM-dd"))" maxlength="35" />
+                <br />
+                <a href="javascript:void(0)">@(Model.Gender == "Your gender" ? "Your gender" : Model.Gender.ToString())</a>
+                <select class="fill-in">
+                    <option value="Your gender">Your gender</option>
+                    <option value="Male" @(Model.Gender == "Male" ? "selected" : string.Empty)>Male</option>
+                    <option value="Female"@(Model.Gender == "Female" ? "selected" : string.Empty)>Female</option>
+                </select>
+                <br />
+                <a class="in-m" href="javascript:void(0)">@(Model.Height == 0f ? "Your height" : Model.Height.ToString() + " m")</a>
+                <input type="number" step="0.01" class="fill-in" value="@(Model.Height == 0f ? "0.00" : Model.Height.ToString())" maxlength="35" />
+                <br />
+                <a class="in-kg" href="javascript:void(0)">@(Model.Weight == 0 ? "Your weight" : Model.Weight.ToString() + " kg")</a>
+                <input type="number" class="fill-in" value="@(Model.Weight == 0f ? "0" : Model.Weight.ToString())" maxlength="35" />
+            </div>
+            <section>
+                Contact<img src="~/img/arrow.png" alt="" />
+                <br />
+            </section>
+            <div>
+                <a href="javascript:void(0)">@Model.Email2</a>
+                <input type="text" class="fill-in" value="@Model.Email2" maxlength="35" />
+                <br />
+                <a href="javascript:void(0)">@Model.Telephone</a>
+                <input type="text" class="fill-in" value="@Model.Telephone" maxlength="35" />
+            </div>
+        }
+        else
+        {
+            <li></li>
+        }
+    </div>
+</nav>
+<main>
+    <h1>@Model.FirstName @Model.LastName</h1>
+    <div class="post-btn new-post is-owner"><img src="~/img/create-post.png" /></div>
+    <div class="post-btn new-video is-owner"><img src="~/img/video.png" /></div>
+    <div class="post-btn new-picture is-owner"><img src="~/img/create-photo.png" /></div>
+    @if(!isOwner && !isFriend)
+    {
+        <div class="post-btn add-friend-btn is-user"><img src="~/img/add-friend.png" /></div>
+    }
+    <div class="fix"></div>
+    @foreach(Pleberr.Models.Post post in posts)
+    {
+        if(isOwner || post.Privacy == "public" || (isFriend && post.Privacy == "friends") || !setting.PostsPrivacy)
+        {
+            <article id="post@(post.Id)">
+                <div class="article-header">
+                    <div style="background-image:url(../../@post.Author/avatar.png)"></div>
+                    <span>
+                        @post.Name<br />
+                        <span>@post.DateCreated.ToString("dddd, dd MMMM yyyy HH:mm")</span>
+                    </span>
+                    <img class="delete-btn is-owner" src="~/img/post-delete.png" alt="" />
+                    <img class="settings-btn is-owner" src="~/img/post-settings.png" alt="" />
+                </div>
+                <div class="fix" style="background:none;width:0;height:0;"></div>
+                <p>
+                    @Html.Raw(post.Content)
+                </p>
+                @foreach(Pleberr.Models.Comment comment in comments)
+                {
+                    if(comment.Post == post.Id)
+                    {
+                        <div class="comment">
+                            <div class="comment-avatar" style="background-image:url(../../@comment.Author/avatar.png)"></div>
+                            <div>
+                                <span>@comment.Name wrote:</span>
+                                @Html.Raw(comment.Content)
+                            </div>
+                        </div>
+                        <div class="fix"></div>
+                    }
+                }
+                <div class="post-options">
+                    <a class="likes" href="javascript:void(0)" title="@post.Likes Likes" data-likes="@post.Likes"><img src="~/img/like.png" alt="" />Like</a>@(isOwner ? Html.Raw(string.Empty) : Html.Raw("<a class=\"share\" href=\"javascript:void(0)\"><img src=\"../../img/share.png\" />Share</a>"))
+                </div>
+                <input typeof="text" class="add-comment" placeholder="Comment here..." />
+                <div class="post-context">
+                    <ul>
+                        <li class="post-option" data-level="private">Private @(post.Privacy == "private" ? Html.Raw("<i class=\"fa fa-check\"></i>") : Html.Raw(string.Empty))</li>
+                        <li class="post-option" data-level="friends">Friends @(post.Privacy == "friends" ? Html.Raw("<i class=\"fa fa-check\"></i>") : Html.Raw(string.Empty))</li>
+                        <li class="post-option" data-level="public">Public @(post.Privacy == "public" ? Html.Raw("<i class=\"fa fa-check\"></i>") : Html.Raw(string.Empty))</li>
+                    </ul>
+                </div>
+                <input type="hidden" class="id" value="@post.Id" />
+            </article>
+            <script>
+                $('#post@(post.Id)').find('.share').click(function () {
+                    $.post("../../share/" + localStorage.getItem('id'), {
+                        postId: @post.Id
+                    })
+                    .done(function () {
+                        window.location = localStorage.getItem('id');
+                    });
+                });
+            </script>
+        }
+    }
+</main>
+<section class="pictures-friends">
+    <section class="pictures">
+        @if(isOwner || !setting.PicturesPrivacy)
+        {
+            <h3>Pictures</h3>
+            for(int i = 0; i < dInfo.GetFiles().Length; i++)
+            {
+                <div data-source="../../@Model.Id/@dInfo.GetFiles()[i].Name" style="background-image:url(../../@Model.Id/@dInfo.GetFiles()[i].Name)"></div>
+            }
+        }
+    </section>
+    <div class="fix"></div>
+    <span class="add-picture is-owner">Add<img src="~/img/add-picture.png" alt="" /></span>
+    <section class="friends">
+        @if(isOwner || !setting.FriendsPrivacy)
+        {
+            <h3>Friends</h3>
+            for(int i = 0; i < friends.Count; i++)
+            {
+                <div title="@friends[i].FirstName @friends[i].LastName" onclick="window.location = '@friends[i].Id#/'" style="cursor:pointer;background-image:url(../../@friends[i].Id/avatar.png)"></div>
+            }
+        }
+    </section>
+</section>
+<script>
+    if (localStorage.getItem('token') === '') {
+        $('.is-user').css('display', 'none');
+    }
+    $('.left-nav').find('section').click(function () {
+        if ($(this).next().css('display') === 'none') {
+            $(this).find('img').css({ transform: 'rotate(180deg)' });
+        } else {
+            $(this).find('img').css({ transform: 'rotate(0deg)' });
+        }
+        $(this).next().slideToggle(200);
+    });
+    $('.new-post').click(function () {
+        $('.overlay').toggle();
+        $('.post').fadeIn(200);
+    });
+    $('.new-video').click(function () {
+        $('.overlay').toggle();
+        $('.video').fadeIn(200);
+    });
+    $('.new-picture, .add-picture').click(function () {
+        $('.overlay').toggle();
+        $('.picture').fadeIn(200);
+    });
+    $('.settings-btn').click(function () {
+        $(this).parent().parent().find('.post-context').toggle();
+    });
+    $('.post-context').find('li').click(function () {
+        var elem = $(this);
+        $.post('../../home/setprivacy/' + elem.parent().parent().parent().find('.id').val(), {
+            level: elem.attr('data-level')
+        })
+        .done(function () {
+            $('.fa').remove();
+            elem.append(' <i class="fa fa-check"></i>');
+        });
+    });
+    $('.delete-btn').click(function () {
+        var elem = $(this);
+        $.get('../../home/deletepost/' + elem.parent().parent().find('.id').val())
+        .done(function () {
+            elem.parent().parent().fadeOut(200);
+        });
+    });
+    $('.add-comment').keypress(function (e) {
+        var elem = $(this);
+        if (e.which === 13 && $(this).val().trim() !== '') {
+            $.post('../../home/postComment', {
+                post: $(this).parent().find('.id').val(),
+                user: localStorage.getItem('pageId'),
+                content: $(this).val().replace("'", '&rsquo;').replace('#', '&#35;').replace('+', '&#43;'),
+                author: localStorage.getItem('id'),
+            })
+            .done(function () {
+                elem.parent().find('.post-options').before('<div class="comment"><div class="comment-avatar" style="background-image:url(../../' + localStorage.getItem('id') + '/avatar.png)"></div><div><span>' + localStorage.getItem('name') + ' wrote:</span> ' + elem.val().replace("'", '&rsquo;').replace('#', '&#35;').replace('+', '&#43;') + '</div></div><div class="fix"></div>');
+                elem.val('');
+            });
+        }
+    });
+    $('.likes').click(function () {
+        var elem = $(this);
+        $.post('../../home/like', {
+            id: localStorage.getItem('id'),
+            postId: $(this).parent().parent().find('.id').val()
+        })
+        .done(function () {
+            elem.attr('title', parseInt(elem.attr('data-likes')) + 1 + ' Likes');
+        });
+    });
+    if (localStorage.getItem('pageId') !== localStorage.getItem('id')) {
+        $('.is-owner').css('display', 'none');
+    } else {
+        $('.left-nav').find('a').click(function () {
+            $(this).toggle();
+            $(this).next().css('display', 'block');
+            $(this).next().select();
+        });
+        $('.left-nav').find('input').keypress(function (e) {
+            if (e.which === 13 && $(this).val().trim() !== '') {
+                $(this).blur();
+                $(this).prev().html($(this).val());
+                if ($(this).prev().hasClass('in-m')) {
+                    $('.in-m').html($(this).val() + ' m');
+                }
+                if ($(this).prev().hasClass('in-kg')) {
+                    $('.in-kg').html($(this).val() + ' kg');
+                }
+                $(this).toggle();
+                $(this).prev().toggle();
+                var school = $('.fill-in').eq(0).val().replace("'", "''").replace('#', '&#35;').replace('+', '&#43;');
+                var work = $('.fill-in').eq(1).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+                var location = $('.fill-in').eq(2).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+                var relationship = $('.fill-in').eq(3).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+                var birthdate = $('.fill-in').eq(4).val();
+                var gender = $('.fill-in').eq(5).val();
+                var height = $('.fill-in').eq(6).val();
+                var weight = $('.fill-in').eq(7).val();
+                var email2 = $('.fill-in').eq(8).val();
+                var telephone = $('.fill-in').eq(9).val();
+                $.get('../../home/updateinfo?id=' + localStorage.getItem('id') + '&school=' + school + '&work=' + work + '&location=' + location + '&relationship=' + relationship + '&birthdate=' + birthdate + '&height=' + height + '&weight=' + weight + '&gender=' + gender + '&email2=' + email2 + '&telephone=' + telephone);
+            }
+        });
+        $('.left-nav').find('select').change(function (e) {
+            $(this).blur();
+            $(this).prev().html($(this).val());
+            if ($(this).prev().hasClass('in-m')) {
+                $('.in-m').html($(this).val() + ' m');
+            }
+            if ($(this).prev().hasClass('in-kg')) {
+                $('.in-kg').html($(this).val() + ' kg');
+            }
+            $(this).toggle();
+            $(this).prev().toggle();
+            var school = $('.fill-in').eq(0).val().replace("'", "''").replace('#', '&#35;').replace('+', '&#43;');
+            var work = $('.fill-in').eq(1).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+            var location = $('.fill-in').eq(2).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+            var relationship = $('.fill-in').eq(3).val().replace("'", '&lsquo;').replace('#', '&#35;').replace('+', '&#43;');
+            var birthdate = $('.fill-in').eq(4).val();
+            var gender = $('.fill-in').eq(5).val();
+            var height = $('.fill-in').eq(6).val();
+            var weight = $('.fill-in').eq(7).val();
+            var email2 = $('.fill-in').eq(8).val();
+            var telephone = $('.fill-in').eq(9).val();
+            $.get('../../home/updateinfo?id=' + localStorage.getItem('id') + '&school=' + school + '&work=' + work + '&location=' + location + '&relationship=' + relationship + '&birthdate=' + birthdate + '&height=' + height + '&weight=' + weight + '&gender=' + gender + '&email2=' + email2 + '&telephone=' + telephone);
+        });
+    }
+    $('.pictures').find('div').click(function () {
+        $('.overlay').css('display', 'block');
+        $('.image').fadeIn(200);
+        $('.display-img').attr('src', $(this).attr('data-source'));
+    });
+    $('.img-post').click(function () {
+        $('.overlay').css('display', 'block');
+        $('.image').fadeIn(200);
+        $('.display-img').attr('src', $(this).attr('src'));
+    });
+    $('.add-friend-btn').click(function () {
+        $(this).css('display', 'none');
+        $.post('../../home/requestfriend/' + localStorage.getItem('pageId'), {
+            from: localStorage.getItem('id')
+        })
+        .done(function () { alert('Your friend request has been sent successfully.'); });
+    });
+</script>
